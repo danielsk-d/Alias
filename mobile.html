@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <!-- Критически важно для iOS: запрещает автоматическое масштабирование и фиксирует размер -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Алиас: Исторические Термины (XIX в.)</title>
+    <style>
+        /* Обнуление отступов и запрет выделения текста пальцем */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Фиксированный экран под размер телефона без прокрутки */
+        body {
+            font-family: 'Georgia', serif;
+            background-color: #fcfaf2; /* Кремовый */
+            color: #1a3322; /* Темно-зеленый для текста */
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: -webkit-fill-available; /* Корректная высота для Safari iOS */
+            overflow: hidden;
+            padding: 16px;
+        }
+
+        html {
+            height: -webkit-fill-available;
+        }
+
+        /* Шапка с ампирным стилем */
+        header {
+            text-align: center;
+            border-bottom: 2px solid #b89742; /* Золото */
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            color: #800020; /* Бордо */
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Панель счета и таймера */
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #800020; /* Бордо */
+            color: #b89742; /* Золото */
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .timer {
+            font-size: 1.2rem;
+            background: #fcfaf2;
+            color: #800020;
+            padding: 2px 10px;
+            border-radius: 20px;
+            border: 1px solid #b89742;
+        }
+
+        /* Главная карточка со словом (Центр экрана) */
+        .card-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 340px;
+            background: #ffffff;
+            border: 3px double #b89742; /* Золотая рамка */
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.05);
+            min-height: 180px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .word {
+            font-size: 1.8rem;
+            color: #800020;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        /* Историческая справка (появляется после хода) */
+        .history-note {
+            font-size: 0.85rem;
+            color: #4a5d4e;
+            font-style: italic;
+            line-height: 1.3;
+            margin-top: 10px;
+            display: none; /* Скрыта во время угадывания */
+        }
+
+        /* Кнопки управления внизу экрана */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            max-width: 340px;
+            margin: 0 auto;
+        }
+
+        /* Базовый стиль крупных мобильных кнопок */
+        .btn {
+            font-family: 'Georgia', serif;
+            font-size: 1.1rem;
+            font-weight: bold;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.1s ease;
+            /* Оптимизация для тачей на iOS */
+            touch-action: manipulation; 
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-success {
+            background-color: #1a3322; /* Темно-зеленыe */
+            color: #b89742;
+        }
+
+        .btn-fail {
+            background-color: #800020; /* Бордо */
+            color: #fcfaf2;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #b89742, #96762c);
+            color: #ffffff;
+            width: 100%;
+        }
+
+        /* Модальное окно итогов игры */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            padding: 20px;
+        }
+
+        .modal {
+            background: #fcfaf2;
+            border: 4px double #b89742;
+            border-radius: 15px;
+            padding: 25px;
+            width: 100%;
+            max-width: 320px;
+            text-align: center;
+        }
+
+        .modal h2 {
+            color: #800020;
+            margin-bottom: 15px;
+        }
+
+        .modal p {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Alias</h1>
+    </header>
+
+    <!-- Панель состояния -->
+    <div class="status-bar">
+        <div id="player-turn">Ход: Игрок 1</div>
+        <div class="timer" id="timer">60</div>
+        <div id="score-board">Счет: 0</div>
+    </div>
+
+    <!-- Игровая карточка -->
+    <div class="card-container">
+        <div class="card" id="game-card">
+            <div class="word" id="current-word">Нажмите «СТАРТ»</div>
+            <div class="history-note" id="history-note">Здесь будет историческая справка после ответа.</div>
+        </div>
+    </div>
+
+    <!-- Кнопки управления -->
+    <div class="controls">
+        <button class="btn btn-start" id="action-btn">СТАРТ</button>
+        <div id="game-buttons" style="display: none; gap: 12px; width: 100%;">
+            <button class="btn btn-success" id="btn-yes" style="flex: 1;">УГАДАЛ (+1)</button>
+            <button class="btn btn-fail" id="btn-no" style="flex: 1;">ПРОПУСК (-1)</button>
+        </div>
+    </div>
+
+    <!-- Окно финала -->
+    <div class="overlay" id="end-overlay">
+        <div class="modal">
+            <h2>Раунд завершен!</h2>
+            <p id="final-player-score">Игрок получил: 0 очков</p>
+            <hr style="border: 1px solid #b89742; margin: 15px 0;">
+            <button class="btn btn-start" id="next-player-btn">Следующий игрок</button>
+        </div>
+    </div>
+
+    <script>
+        // База данных: 30 исторических терминов XIX века со справками
+        const dictionary = [
+            { word: "Декабристы", note: "Участники российского оппозиционного движения, члены тайных обществ, организовавшие восстание 14 декабря 1825 года." },
+            { word: "Негласный комитет", note: "Неофициальный совещательный орган при Александре I, созданный для разработки реформ (1801–1803 гг.)." },
+            { word: "Вольные хлебопашцы", note: "Крестьяне, освобожденные от крепостной зависимости по закону 1803 года по обоюдному согласию с помещиком." },
+            { word: "Министерства", note: "Органы исполнительной власти, введенные Александром I в 1802 году взамен старых петровских коллегий." },
+            { word: "Цензура", note: "Система государственного надзора за печатью. Чугунный устав 1826 года — пик её строгости." },
+            { word: "Жандармерия", note: "Полиция, имеющая военную организацию. Исполнительный орган Третьего отделения при Николае I." },
+            { word: "Славянофилы", note: "Представители общественного направления, выступавшие за самобытный путь развития России, отличный от Европы." },
+            { word: "Западники", note: "Сторонники развития России по европейскому пути, критиковавшие крепостничество и самодержавие." },
+            { word: "Кодификация", note: "Систематизация законов. Проведена М.М. Сперанским, результатом стал «Свод законов Российской империи»." },
+            { word: "Отечественная война", note: "Освободительная война России против французской экспансии Наполеона в 1812 году." },
+            { word: "Священный союз", note: "Союз европейских монархов, созданный после Венского конгресса (1815) для поддержания порядка в Европе." },
+            { word: "Военные поселения", note: "Система организации войск при Александре I (руководитель Аракчеев), совмещавшая службу и сельское хозяйство." },
+            { word: "Теория официальной народности", note: "Государственная идеология Николая I, сформулированная Уваровым: «Православие, Самодержавие, Народность»." },
+            { word: "Партизаны", note: "Члены добровольческих отрядов (например, Д. Давыдов), действовавшие в тылу наполеоновской армии в 1812 году." },
+            { word: "Лицей", note: "Царскосельский лицей — привилегированное учебное заведение, открытое в 1811 году, где учился А.С. Пушкин." },
+            { word: "Петрашевцы", note: "Участники тайного кружка Буташевича-Петрашевского, увлекавшиеся социализмом и осужденные в 1849 году (включая Достоевского)." },
+            { word: "Венский конгресс", note: "Общеевропейская конференция 1814–1815 годов, определившая границы государств после разгрома Наполеона." },
+            { word: "Континентальная блокада", note: "Запрет на торговлю с Великобританией, к которому Россия вынужденно примкнула по Тильзитскому миру в 1807 году." },
+            { word: "Ампир", note: "Стиль позднего классицизма в архитектуре и искусстве первой половины XIX века, воплощавший величие империи." },
+            { word: "Разночинцы", note: "Выходцы из разных чинов и сословий (духовенство, купечество, мещанство), занимавшиеся умственным трудом." },
+            { word: "Секретные комитеты", note: "Временные государственные органы при Николае I, тайно обсуждавшие проекты крестьянской реформы." },
+            { word: "Имамат", note: "Теократическое государство на Кавказе, боровшееся против России во главе с Шамилем во время Кавказской войны." },
+            { word: "Кантонисты", note: "Солдатские сыновья, с рождения зачисленные за военным ведомством и обучавшиеся в специальных школах." },
+            { word: "Корпус жандармов", note: "Военно-полицейская структура, созданная Николаем I для борьбы с революционными настроениями." },
+            { word: "Промышленный переворот", note: "Начавшийся в 1830-х годах переход от ручного труда к машинному, от мануфактуры к фабрике." },
+            { word: "Рекрутская повинность", note: "Способ комплектования армии, когда от общин поставлялось определенное число человек на пожизненную (позже 25 лет) службу." },
+            { word: "Мюридизм", note: "Направление в исламе, ставшее идеологической основой горцев в Кавказской войне под лозунгом священной войны." },
+            { word: "Сословие", note: "Социальная группа (дворяне, купцы, крестьяне), обладающая закрепленными в законе правами и обязанностями." },
+            { word: "Ассигнации", note: "Бумажные деньги, выпускавшиеся в России, которые сильно обесценились и были заменены серебряным рублем Сперанского/Канкрина." },
+            { word: "Строгий классицизм", note: "Архитектурный стиль начала XIX века, ориентированный на античные каноны простоты и гармонии." ]
+        ];
+
+        let gameWords = [...dictionary];
+        let currentWordIndex = null;
+        let score = 0;
+        let timerInterval = null;
+        let timeLeft = 60;
+        let currentPlayer = 1;
+        let isGameActive = false;
+
+        // Элементы UI
+        const wordEl = document.getElementById("current-word");
+        const noteEl = document.getElementById("history-note");
+        const timerEl = document.getElementById("timer");
+        const scoreBoardEl = document.getElementById("score-board");
+        const playerTurnEl = document.getElementById("player-turn");
+        const actionBtn = document.getElementById("action-btn");
+        const gameButtons = document.getElementById("game-buttons");
+        const endOverlay = document.getElementById("end-overlay");
+        const finalScoreEl = document.getElementById("final-player-score");
+        const nextPlayerBtn = document.getElementById("next-player-btn");
+
+        // Явное назначение тач-событий для мгновенного отклика на iPhone
+        actionBtn.addEventListener("click", startRound);
+        document.getElementById("btn-yes").addEventListener("click", () => handleAnswer(true));
+        document.getElementById("btn-no").addEventListener("click", () => handleAnswer(false));
+        nextPlayerBtn.addEventListener("click", closeSummaryAndSwitch);
+
+        function startRound() {
+            isGameActive = true;
+            score = 0;
+            timeLeft = 60;
+            scoreBoardEl.textContent = `Счет: ${score}`;
+            timerEl.textContent = timeLeft;
+            
+            actionBtn.style.display = "none";
+            gameButtons.style.display = "flex";
+            noteEl.style.display = "none";
+
+            nextWord();
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerEl.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    endRound();
+                }
+            }, 1000);
+        }
+
+        function nextWord() {
+            if (gameWords.length === 0) {
+                gameWords = [...dictionary]; // Обнуляем колоду, если слова закончились
+            }
+            currentWordIndex = Math.floor(Math.random() * gameWords.length);
+            wordEl.textContent = gameWords[currentWordIndex].word;
+            noteEl.style.display = "none"; // Прячем справку для нового слова
+        }
+
+        function handleAnswer(isCorrect) {
+            if (!isGameActive) return;
+
+            // Показываем историческую справку текущего слова
+            noteEl.textContent = gameWords[currentWordIndex].note;
+            noteEl.style.display = "block";
+
+            // Корректируем счет
+            if (isCorrect) {
+                score++;
+            } else {
+                score--;
+            }
+            scoreBoardEl.textContent = `Счет: ${score}`;
+
+            // Небольшая задержка перед следующим словом, чтобы успеть прочитать справку (0.8 секунды)
+            isGameActive = false; // Блокируем клики на время паузы
+            setTimeout(() => {
+                if (timeLeft > 0) {
+                    gameWords.splice(currentWordIndex, 1); // Удаляем угаданное слово из текущей сессии
+                    isGameActive = true;
+                    nextWord();
+                }
+            }, 900);
+        }
+
+        function endRound() {
+            clearInterval(timerInterval);
+            isGameActive = false;
+            finalScoreEl.textContent = `Игрок ${currentPlayer} набрал: ${score} очков!`;
+            endOverlay.style.display = "flex";
+        }
+
+        function closeSummaryAndSwitch() {
+            endOverlay.style.display = "none";
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            playerTurnEl.textContent = `Ход: Игрок ${currentPlayer}`;
+            wordEl.textContent = "Нажмите «СТАРТ»";
+            noteEl.style.display = "none";
+            timerEl.textContent = "60";
+            scoreBoardEl.textContent = "Счет: 0";
+            gameButtons.style.display = "none";
+            actionBtn.style.display = "block";
+        }
+    </script>
+</body>
+</html>
